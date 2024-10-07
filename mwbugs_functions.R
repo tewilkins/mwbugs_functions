@@ -32,12 +32,8 @@ taxonMatch <- function(x){
   taxon_all_db$taxon <- gsub("\\s*\\(Unitent\\.\\)", "", taxon_all_db$taxon)
   
   for (i in 1:length(x)){
-    # taxon_all_db dataframe does not use "00" as trailing taxon codes. These should be removed from supplied taxoncodes.
-    if (substr(x[i], 7, 8) == "00") {
-      x[i] <- substr(x[i], 1, 6)
-    }
-    # same with "99" as trailing taxon codes. These should be removed from supplied taxoncodes.
-    if (substr(x[i], nchar(x[i])-1, nchar(x[i])) == "99") {
+    # taxon_all_db dataframe does not use "00" or "99" as trailing taxon codes. These should be removed from supplied taxoncodes.
+    if (substr(x[i], nchar(x[i])-1, nchar(x[i])) %in% c("00","99")) {
       x[i] <- substr(x[i], 1, nchar(x[i])-2)
       warning("Taxonomic name(s) truncated to ", toString(x[i]), ".")
     }
