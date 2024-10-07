@@ -1,3 +1,14 @@
+load_taxon_all <- function(){
+  if (!exists("taxon_all_db")){
+    db_mwbugs <- RPostgres::dbConnect(RPostgres::Postgres(), "mwbugs", host = "localhost", port = 5432, user = "readonly", password = "reachcode_42")
+    taxon_all_db <- DBI::dbGetQuery(db_mwbugs, "SELECT * FROM taxon_all;")
+    taxon_all_db$taxon[taxon_all_db$shortcode == "M"] <- "Acarina" # Change "M" from arachnida (class of arachnids) to hydrachnidia (unranked water mites)
+    assign("taxon_all_db", taxon_all_db, envir = .GlobalEnv)
+  } else {
+    warning("taxon_all_db is already loaded in the global environment.")
+  }
+}
+
 taxonMatch <- function(x){
   # If the passed vector is empty:
   y <- x
@@ -10,6 +21,7 @@ taxonMatch <- function(x){
     db_mwbugs <- RPostgres::dbConnect(RPostgres::Postgres(), "mwbugs", host = "localhost", port = 5432, user = "readonly", password = "reachcode_42")
     taxon_all_db <- DBI::dbGetQuery(db_mwbugs, "SELECT * FROM taxon_all;")
     taxon_all_db$taxon[taxon_all_db$shortcode == "M"] <- "Acarina" # Change "M" from arachnida (class of arachnids) to hydrachnidia (unranked water mites)
+    assign("taxon_all_db", taxon_all_db, envir = .GlobalEnv)
   }
   
   # Taxonomy dataframe no longer needed with full taxon_all_db 
@@ -24,6 +36,12 @@ taxonMatch <- function(x){
     if (substr(x[i], 7, 8) == "00") {
       x[i] <- substr(x[i], 1, 6)
     }
+    # same with "99" as trailing taxon codes. These should be removed from supplied taxoncodes.
+    if (substr(x[i], nchar(x[i])-1, nchar(x[i])) == "99") {
+      x[i] <- substr(x[i], 1, nchar(x[i])-2)
+      warning("Taxonomic name(s) truncated to ", toString(x[i]), ".")
+    }
+    
     # Matches the taxoncode to taxon in taxon_all:
     y[i] <- taxon_all_db$taxon[match(x[i], taxon_all_db$shortcode)]
     
